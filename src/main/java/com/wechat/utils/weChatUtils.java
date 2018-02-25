@@ -45,14 +45,16 @@ final public class weChatUtils {
 	private String grant_type = "authorization_code";
 
 	private  String WeChatUri = "https://api.weixin.qq.com/sns/jscode2session";
+	
+	private Map<String, Object> return_result = null;
 
 	public weChatUtils(String js_code) {
 		this.params.put("appid", appid);
 		this.params.put("secret", secret);
 		this.params.put("js_code", js_code);
 		this.params.put("grant_type", grant_type);
+		this.return_result = JSON.parseObject(requestWX());
 	}
-
 
 	/**
 	 * 获取用户的唯一标识openid
@@ -60,7 +62,7 @@ final public class weChatUtils {
 	 * @throws Exception
 	 */
 	public String getOpenId() throws Exception {
-		Map<String, Object> result = JSON.parseObject(requestWX());
+		Map<String, Object> result = this.return_result;
 		String openid = result.get("openid").toString() == null ? "":result.get("openid").toString();
 		String session_key =  result.get("session_key").toString() == null ? "":result.get("openid").toString();
 		if(openid == null) {
@@ -74,7 +76,6 @@ final public class weChatUtils {
 
 	private String requestWX(){
 		CloseableHttpClient httpclient = HttpClients.createDefault();
-
 		String resultString = "";
 		CloseableHttpResponse response = null;
 		try {
@@ -111,10 +112,7 @@ final public class weChatUtils {
 			}
 		}
 		return resultString;
-
 	}
-
-
 
 	/**
 	 * 解析微信服务器的encryptedData内容
@@ -124,10 +122,9 @@ final public class weChatUtils {
 	 */
 	public String analyzeEncryptedData(String encryptedData,String iv) {
 
-		Map<String, Object> result = JSON.parseObject(requestWX());
 		byte[] result_out = null;
 		Cipher cipher = null;
-		byte[] seesion_key_de64 =  Base64.decodeBase64(result.get("openid").toString().getBytes());
+		byte[] seesion_key_de64 =  Base64.decodeBase64(this.return_result.get("session_key").toString().getBytes());
 		byte[] encrypyen_64 =  Base64.decodeBase64(encryptedData.getBytes());
 		byte[] iv_de64 =  Base64.decodeBase64(iv.getBytes());
 
